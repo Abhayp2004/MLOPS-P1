@@ -1,42 +1,46 @@
 pipeline {
     agent any
 
-    environment{
-        VENV_DIR='venv'
+    environment {
+        VENV_DIR = "venv"
     }
 
     stages {
-        stage('Cloning Github repo to Jenkins') {
-            steps {
-                script {
-                    echo "Cloning Github repo to Jenkins......."
 
-                    checkout scmGit(
-                        branches: [[name: '*/main']],
-                        extensions: [],
-                        userRemoteConfigs: [[
-                            credentialsId: 'github-token',
-                            url: 'https://github.com/Abhayp2004/MLOPS-P1.git'
-                        ]]
-                    )
-                }
+        stage('Clone GitHub Repo') {
+            steps {
+                echo "📥 Cloning GitHub repository..."
+
+                checkout scmGit(
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        credentialsId: 'github-token',
+                        url: 'https://github.com/Abhayp2004/MLOPS-P1.git'
+                    ]]
+                )
             }
         }
 
-        stage('Setting up venv and installing dependencies') {
+        stage('Setup Python Virtual Environment') {
             steps {
-                script {
-                    echo "Setting up venv and installing dependencies"
-                    sh  '''
-                    python -m venv ${VENV_DIR}
-                    . ${VENV_DIR}/bin/activate
-                    pip install --upgrade pip
-                    pip install -e .
-                    '''
+                echo "🐍 Creating virtual environment..."
 
-                   
-                }
+                sh """
+                    python3 -m venv ${VENV_DIR}
+                """
             }
         }
+
+        stage('Install Dependencies') {
+            steps {
+                echo "📦 Installing dependencies..."
+
+                sh """
+                    ${VENV_DIR}/bin/pip install --upgrade pip
+                    ${VENV_DIR}/bin/pip install -r requirements.txt
+                """
+            }
+        }
+
     }
 }

@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment{
+        VENV_DIR='venv'
+    }
+
     stages {
         stage('Cloning Github repo to Jenkins') {
             steps {
@@ -15,6 +19,22 @@ pipeline {
                             url: 'https://github.com/Abhayp2004/MLOPS-P1.git'
                         ]]
                     )
+                }
+            }
+        }
+
+        stage('Setting up venv and installing dependencies') {
+            steps {
+                script {
+                    echo "Setting up venv and installing dependencies"
+                    sh  '''
+                    python -m venv ${VENV_DIR}
+                    . ${VENV_DIR}/bin/activate
+                    pip install --upgrade pip
+                    pip install -e .
+                    '''
+
+                   
                 }
             }
         }

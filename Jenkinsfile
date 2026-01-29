@@ -4,6 +4,7 @@ pipeline {
     environment {
         VENV_DIR = "venv"
         GCP_PROJECT = "project-901d41e4-9c7e-4942-a40"
+        PATH = "/opt/homebrew/bin:${env.PATH}"
         REGION = "us-central1"
         IMAGE_NAME = "mlops-project"
     }
@@ -85,3 +86,4 @@ pipeline {
         }
     }
 }
+

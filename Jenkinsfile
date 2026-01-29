@@ -4,9 +4,12 @@ pipeline {
     environment {
         VENV_DIR = "venv"
         GCP_PROJECT = "project-901d41e4-9c7e-4942-a40"
-        PATH = "/opt/homebrew/bin:${env.PATH}"
+        PATH="/opt/homebrew/bin/gsutil"
         REGION = "us-central1"
         IMAGE_NAME = "mlops-project"
+        GCS_BUCKET = "my_bucket2004"
+        GCS_OBJECT = "Hotel_Reservations.csv"
+        LOCAL_DATASET_PATH = "MLOPS/notebook/train.csv"
     }
 
     stages {
@@ -45,7 +48,12 @@ pipeline {
         stage('Upload dataset to GCS') {
             steps {
                 echo "☁️ Uploading dataset to GCS..."
-                sh "gsutil cp Hotel_Reservations.csv gs://my_bucket2004/"
+                sh """
+                    set -euo pipefail
+                    test -f "${LOCAL_DATASET_PATH}"
+                    gcloud config set project "${GCP_PROJECT}"
+                    gcloud storage cp "${LOCAL_DATASET_PATH}" "gs://${GCS_BUCKET}/${GCS_OBJECT}"
+                """
             }
         }
 
@@ -54,7 +62,7 @@ pipeline {
                 echo "🐳 Building Docker image..."
 
                 sh """
-                    docker build -t ${REGION}-docker.pkg.dev/${GCP_PROJECT}/mlops-repo/${IMAGE_NAME}:latest .
+                    docker build -f MLOPS/Dockerfile_project -t ${REGION}-docker.pkg.dev/${GCP_PROJECT}/mlops-repo/${IMAGE_NAME}:latest MLOPS
                 """
             }
         }
@@ -64,6 +72,8 @@ pipeline {
                 echo "📤 Pushing image to Artifact Registry..."
 
                 sh """
+                    set -euo pipefail
+                    gcloud config set project "${GCP_PROJECT}"
                     gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
                     docker push ${REGION}-docker.pkg.dev/${GCP_PROJECT}/mlops-repo/${IMAGE_NAME}:latest
                 """
@@ -75,6 +85,8 @@ pipeline {
                 echo "🚀 Deploying to Cloud Run..."
 
                 sh """
+                    set -euo pipefail
+                    gcloud config set project "${GCP_PROJECT}"
                     gcloud run deploy ml-project \
                       --image ${REGION}-docker.pkg.dev/${GCP_PROJECT}/mlops-repo/${IMAGE_NAME}:latest \
                       --platform managed \
@@ -86,4 +98,3 @@ pipeline {
         }
     }
 }
-
